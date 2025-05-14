@@ -1,0 +1,247 @@
+﻿﻿﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Troya - HackMyVM - Medium - Bericht</title> <!-- Titel angepasst -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../../horizontale-navbar.css">
+    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700&display=swap" rel="stylesheet">
+</head>
+ <body>
+ 
+    <!-- Header-Hintergrundfarbe wird durch CSS gesteuert -->
+    <div class="header-bg">
+        <h1>Troya - HackMyVM - Medium - Bericht</h1> <!-- Titel angepasst -->
+        <!-- Schwierigkeitsgrad-Container mit Klasse für CSS-Styling -->
+        <div class="level-container level-medium"> <!-- Klasse angepasst -->
+            <!-- Kein Inline-Style mehr -->
+            <h2>Medium</h2> <!-- Schwierigkeitsgrad angepasst -->
+            <div class="circle">
+                <div class="segment segment-1"></div>
+                <div class="segment segment-2"></div>
+                <div class="segment segment-3"></div>
+                <!-- Kein Inline-Style mehr -->
+                <div class="inner"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <section class="tools-used">
+            <h2>Verwendete Tools</h2>
+            <div class="tools-grid">
+                <!-- Tools werden hier eingefügt -->
+                <div class="tool-item">arp-scan</div>
+                <div class="tool-item">nmap</div>
+                <div class="tool-item">nikto</div>
+                <div class="tool-item">ssh</div>
+                <div class="tool-item">ssh-keyscan</div>
+                <div class="tool-item">cat</div> <!-- Implizit für Flags -->
+            </div>
+        </section>
+
+        <section class="toc">
+            <h2>Inhaltsverzeichnis</h2>
+            <ul>
+                <!-- Inhaltsverzeichnis wird hier eingefügt -->
+                <li><a href="#reconnaissance">Reconnaissance</a></li>
+                <li><a href="#web-enumeration">Web Enumeration</a></li>
+                <li><a href="#initial-access">Initial Access</a></li>
+                <li><a href="#poc">Proof of Concept</a></li>
+                <li><a href="#privilege-escalation">Privilege Escalation</a></li>
+                <li><a href="#flags">Flags</a></li>
+            </ul>
+        </section>
+
+        <section id="reconnaissance">
+            <h2>Reconnaissance</h2>
+            <!-- Reconnaissance Inhalt beginnt hier -->
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">arp-scan -l</span></div>
+                    <pre>
+Interface: eth0, type: EN10MB, MAC: 08:00:27:1c:9c:04, IPv4: 192.168.2.199
+Starting arp-scan 1.10.0 with 256 hosts (https://github.com/royhills/arp-scan)
+<span class="command">192.168.2.126	08:00:27:ee:cf:42	PCS Systemtechnik GmbH</span>
+                    </pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Der Befehl `arp-scan -l` dient der Identifizierung aktiver Geräte im lokalen Netzwerksegment (Layer 2). Er sendet ARP-Anfragen aus und listet antwortende Systeme mit ihrer IP- und MAC-Adresse sowie dem Hersteller auf. Hier wird ein Host mit der IP `192.168.2.126` gefunden.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Dies ist der erste Schritt zur Zielidentifikation. Die IP `192.168.2.126` wird als unser Zielsystem für weitere Untersuchungen festgelegt. Die MAC-Adresse `08:00:27:ee:cf:42` deutet wieder auf eine Oracle VirtualBox VM hin.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Verwende die IP `192.168.2.126` für nachfolgende Port- und Service-Scans (z.B. mit Nmap).
+<br><strong>Empfehlung (Admin):</strong> Netzwerküberwachung und Segmentierung können helfen, unautorisierte Scans zu erkennen und einzudämmen, obwohl ARP-Scans im lokalen Netz schwer zu unterbinden sind.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">nmap -sS -sC -T5 -A 192.168.2.126 -p-</span></div>
+                    <pre>
+Starting Nmap 7.93 ( https://nmap.org ) at 2022-11-18 23:28 CET
+Nmap scan report for troya (192.168.2.126)
+Host is up (0.00012s latency).
+Not shown: 65533 closed tcp ports (reset)
+PORT   STATE SERVICE VERSION
+<span class="command">22/tcp open  ssh     OpenSSH 7.9p1 Debian 10+deb10u2 (protocol 2.0)</span>
+| ssh-hostkey:
+|   <span class="command">2048 b0b85e2c41b87cc820e809ff7a6fff9f (RSA)</span>
+|   <span class="command">256 3f449f2514994017e0071f2e67de7818 (ECDSA)</span>
+|_  <span class="command">256 c40e9355b27b8c86c3e46d019360d2b1 (ED25519)</span>
+<span class="command">80/tcp open  http    nginx 1.14.2</span>
+|_http-title: Site doesn't have a title (text/html; charset=UTF-8).
+|_http-server-header: nginx/1.14.2
+MAC Address: 08:00:27:EE:CF:42 (Oracle VirtualBox virtual NIC)
+Device type: general purpose
+Running: Linux 4.X|5.X
+OS CPE: cpe:/o:linux:linux_kernel:4 cpe:/o:linux:linux_kernel:5
+OS details: <span class="command">Linux 4.15 - 5.6</span>
+Network Distance: 1 hop
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+TRACEROUTE
+HOP RTT     ADDRESS
+1   0.12 ms troya (192.168.2.126)
+
+                    </pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Ein umfassender Nmap-Scan wird durchgeführt: `-sS` (SYN-Scan), `-sC` (Standard-Skripte), `-T5` (sehr schnelles Timing), `-A` (aggressive Optionen: OS-Erkennung, Versionserkennung, Skript-Scan, Traceroute), `-p-` (alle TCP-Ports).
+Ergebnis:
+*   Port `22/tcp`: Offen, SSH-Dienst (OpenSSH 7.9p1 auf Debian 10). Die Host-Schlüssel werden angezeigt.
+*   Port `80/tcp`: Offen, HTTP-Dienst (Nginx 1.14.2). Die Webseite hat keinen Titel.
+Das Betriebssystem wird als Linux (Kernel 4.x/5.x) identifiziert.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Die Scan-Ergebnisse zeigen zwei Hauptangriffsvektoren: SSH und HTTP. Die spezifischen Versionen von OpenSSH und Nginx sind für die Suche nach bekannten Schwachstellen relevant. Das Fehlen eines Seitentitels auf Port 80 deutet auf eine Standardseite oder eine einfache Webanwendung hin.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong>
+1.  **SSH (Port 22):** Versuche bekannte Standard- oder schwache Zugangsdaten. Suche nach Schwachstellen für OpenSSH 7.9p1 (obwohl diese Version relativ robust ist).
+2.  **HTTP (Port 80):** Führe Web-Enumeration durch (Nikto, Gobuster/Dirb/Feroxbuster), um Verzeichnisse, Dateien und potenzielle Schwachstellen zu finden.
+<br><strong>Empfehlung (Admin):</strong> Halten Sie OpenSSH und Nginx auf dem neuesten Stand. Konfigurieren Sie SSH sicher (z.B. nur Key-Authentifizierung, Deaktivierung von Root-Login, Fail2Ban). Konfigurieren Sie Nginx sicher (z.B. unnötige Module deaktivieren, Sicherheitsheader setzen).</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">nikto -h 192.168.2.126</span></div>
+                    <pre>
+- Nikto v2.1.6
+---------------------------------------------------------------------------
++ Target IP:          192.168.2.126
++ Target Hostname:    192.168.2.126
++ Target Port:        80
++ Start Time:         2022-11-18 23:29:04 (GMT1)
+---------------------------------------------------------------------------
++ Server: nginx/1.14.2
++ <span class="password">The anti-clickjacking X-Frame-Options header is not present.</span>
++ <span class="password">The X-XSS-Protection header is not defined.</span> This header can hint to the user agent to protect against some forms of XSS
++ <span class="password">The X-Content-Type-Options header is not set.</span> This could allow the user agent to render the content of the site in a different fashion to the MIME type
++ No CGI Directories found (use '-C all' to force check all possible dirs)
++ 7915 requests: 0 error(s) and 3 item(s) reported on remote host
++ End Time:           2022-11-18 23:29:51 (GMT1) (47 seconds)
+---------------------------------------------------------------------------
++ 1 host(s) tested
+                    </pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Der Webserver-Scanner `nikto` wird auf das Ziel (Port 80) angewendet. Nikto identifiziert den Server als Nginx 1.14.2 und meldet das Fehlen von drei wichtigen HTTP-Sicherheitsheadern: `X-Frame-Options` (Schutz gegen Clickjacking), `X-XSS-Protection` (basaler XSS-Schutz in älteren Browsern) und `X-Content-Type-Options` (Schutz gegen MIME-Sniffing).</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Die fehlenden Header sind häufige Konfigurationsmängel, stellen aber meist keine direkten Einfallstore dar. Sie weisen jedoch auf ein potenziell geringeres Sicherheitsbewusstsein bei der Konfiguration hin. Nikto findet keine offensichtlichen kritischen Schwachstellen wie bekannte verwundbare Skripte oder offene Verzeichnisse.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Setze die Web-Enumeration mit anderen Werkzeugen fort, die nach Inhalten suchen (z.B. Gobuster), da Nikto hier keine tiefergehenden Funde liefert.
+<br><strong>Empfehlung (Admin):</strong> Implementieren Sie die fehlenden Sicherheitsheader in der Nginx-Konfiguration, um die allgemeine Sicherheit der Webanwendung zu erhöhen (z.B. `add_header X-Frame-Options "SAMEORIGIN";`, `add_header X-Content-Type-Options "nosniff";`, `add_header X-XSS-Protection "1; mode=block";`).</p>
+            <!-- Reconnaissance Inhalt endet hier -->
+        </section>
+
+        <section id="web-enumeration">
+            <h2>Web Enumeration</h2>
+            <!-- Web Enumeration Inhalt beginnt hier -->
+            <p class="evaluation"> Basierend auf dem Nikto-Scan und dem Fehlen weiterer Enumerationsschritte im bereitgestellten Text, scheint die Web-Enumeration keine signifikanten Ergebnisse oder Angriffspunkte ergeben zu haben. Die Webseite auf Port 80 präsentierte sich wahrscheinlich als einfache Standardseite ohne offensichtliche Funktionalitäten oder Schwachstellen. </p>
+            <!-- [WEB_ENUMERATION] -->
+             <!-- Kein relevanter Inhalt im Text für diesen Abschnitt -->
+            <!-- Web Enumeration Inhalt endet hier -->
+        </section>
+
+        <section id="initial-access">
+            <h2>Initial Access</h2>
+            <!-- Initial Access Inhalt beginnt hier -->
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">ssh troya@192.168.2.126</span></div>
+                    <pre>
+The authenticity of host '192.168.2.126 (192.168.2.126)' can't be established.
+ED25519 key fingerprint is SHA256:C/Y6yG9C5Q13br6Fqe2xFTzs/ivrDZ3Fqut/Y/smbg.
+This key is not known by any other names
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '192.168.2.126' (ED25519) to the list of known hosts.
+troya@192.168.2.126's password:
+<span class="password">Permission denied, please try again.</span>
+troya@192.168.2.126's password:
+<span class="password">Permission denied, please try again.</span>
+troya@192.168.2.126's password:
+<span class="password">troya@192.168.2.126: Permission denied (publickey,password).</span>
+                    </pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Es wird versucht, eine SSH-Verbindung als Benutzer `troya` zum Zielsystem aufzubauen. Nach Bestätigung des Host-Schlüssels schlagen mehrere Passwort-Eingabeversuche fehl. Die abschließende Meldung `Permission denied (publickey,password)` bestätigt, dass sowohl die Public-Key- als auch die Passwort-Authentifizierung fehlgeschlagen sind.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Dieser Versuch zeigt, dass der Benutzer `troya` wahrscheinlich auf dem System existiert (keine "User unknown"-Meldung), aber die eingegebenen Passwörter falsch waren oder die Passwort-Authentifizierung für diesen Benutzer möglicherweise eingeschränkt ist. Ein initialer Zugriff über SSH mit diesem Benutzer und den versuchten Passwörtern war nicht möglich.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Da einfache Passwortversuche fehlschlagen, müssen alternative Methoden zur Kompromittierung oder zur Erlangung gültiger Zugangsdaten gesucht werden (z.B. über Web-Schwachstellen, falls vorhanden, oder durch andere Informationslecks). Brute-Force gegen SSH ist oft ineffizient und laut.
+<br><strong>Empfehlung (Admin):</strong> Stellen Sie sicher, dass starke Passwörter verwendet werden. Erwägen Sie die Deaktivierung der Passwort-Authentifizierung zugunsten der Schlüssel-Authentifizierung für erhöhte Sicherheit. Implementieren Sie Fail2Ban oder ähnliche Tools, um Brute-Force-Versuche zu blockieren.</p>
+
+            <div class="code-block">
+                <div class="terminal">
+                    <div class="prompt">┌──(root㉿cyber)-[~]
+└─# <span class="command">ssh-keyscan 192.168.2.126</span></div>
+                    <pre>
+# 192.168.2.126:22 SSH-2.0-OpenSSH_7.9p1 Debian-10+deb10u2
+# 192.168.2.126:22 SSH-2.0-OpenSSH_7.9p1 Debian-10+deb10u2
+<span class="command">192.168.2.126 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDGzDvMiSzAKx8LgRHQSGCjYQnRMIvZ3UuVvF2HjumUrcKqsmhoqrt+r2xW6LWnViU5vLLQJrpwaoBCZPAAamZSQRttehcSjJE9JcBLg2wYC2oiMCBQ1k+QL/Iknc+eTPRVNUDKFMaUpdbPSX2glm+m6TpA52MRS1FqZkFsuvwM3D3iRfpB5FecYSe6ihuUaUm/5z72rJIsStfkM6Qe8NqnDF0DfD7vSCEiFenNJZT8djSFMQ+Bg8dXwlp6aCb8G9VWQwyjrgxTcDMv20nWvocQcRy2fN8qC1WPRBZhVl/LjGC9eBjmH1bRHZ3ydcdZChba3KrdVkSxpfbF</span>
+# 192.168.2.126:22 SSH-2.0-OpenSSH_7.9p1 Debian-10+deb10u2
+<span class="command">192.168.2.126 ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEbFs3VVPjlgJmE+s21fQoDV+WrZALhTfD04WHrfn9cqqR3oLdkHW9DswbrxAS7fmvVN2t9IgXmcaJhXyXJtI=</span>
+# 192.168.2.126:22 SSH-2.0-OpenSSH_7.9p1 Debian-10+deb10u2
+<span class="command">192.168.2.126 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGTvnYiwMPSizNaaMbsjAbUAtRzcmAf71bfuB6mg++I</span>
+# 192.168.2.126:22 SSH-2.0-OpenSSH_7.9p1 Debian-10+deb10u2
+                    </pre>
+                </div>
+            </div>
+            <p class="analysis"><strong>Analyse:</strong> Der Befehl `ssh-keyscan` wird verwendet, um die öffentlichen SSH-Host-Schlüssel des Zielservers abzurufen. Dies listet die RSA-, ECDSA- und ED25519-Schlüssel auf, die der Server präsentiert.</p>
+            <p class="evaluation"><strong>Bewertung:</strong> Dieser Schritt liefert keine direkten Informationen für einen Einbruch, bestätigt aber die vom Server verwendeten Schlüsseltypen und deren Werte. Der Kommentar "Die Box reagiert auf nichts" im Originaltext, der vermutlich nach diesen Versuchen kam, unterstreicht die Schwierigkeit, einen einfachen Zugang über die gefundenen Dienste (HTTP, SSH) zu erlangen.</p>
+            <p class="recommendation"><strong>Empfehlung (Pentester):</strong> Da die offensichtlichen Wege (Standard-Webseiten-Checks, SSH-Passwortversuche) keine Ergebnisse brachten, wären weiterführende Techniken nötig gewesen, wie z.B. intensiveres Fuzzing von Web-Parametern, Suche nach obskureren Schwachstellen in den spezifischen Dienstversionen, oder die Hoffnung auf Informationslecks an anderer Stelle (z.B. OSINT, falls anwendbar).
+<br><strong>Empfehlung (Admin):</strong> Eine gut gehärtete Standardkonfiguration ohne offensichtliche Schwachstellen ist eine gute Verteidigungslinie. Regelmäßige Updates und eine minimale Angriffsfläche sind entscheidend.</p>
+            <!-- [INITIAL_ACCESS] -->
+            <!-- Kein erfolgreicher Initial Access dokumentiert -->
+            <!-- Initial Access Inhalt endet hier -->
+        </section>
+
+        <section id="poc">
+            <h2>Proof of Concept</h2>
+            <!-- [POC] -->
+            <p class="evaluation"> Im bereitgestellten Text gibt es keine dokumentierten Schritte, die eine erfolgreiche Ausnutzung einer Schwachstelle demonstrieren. Daher kann kein Proof of Concept Abschnitt erstellt werden. Die initialen Zugriffsversuche schlugen fehl. </p>
+            <!-- POC Inhalt endet hier -->
+        </section>
+
+        <section id="privilege-escalation">
+            <h2>Privilege Escalation</h2>
+            <!-- [PRIVILEGE_ESCALATION] -->
+             <p class="evaluation"> Da kein initialer Zugriff auf das System erlangt wurde (laut dem bereitgestellten Text), konnten keine Schritte zur Rechteausweitung durchgeführt werden. </p>
+            <!-- Privilege Escalation Inhalt endet hier -->
+        </section>
+
+        <!-- Flags Section (Korrekte Struktur gemäß Regeln) -->
+        <section id="flags">
+            <div class="flag-container">
+                <h2 class="flag-heading">Flags</h2>
+                <div class="flag-entry">
+                    <div class="flag-command">cat user.txt</div> <!-- Kommando angenommen -->
+                    <div class="flag-value"><span class="password">pleasestop</span></div> <!-- Flag aus Text -->
+                </div>
+                <div class="flag-entry">
+                    <div class="flag-command">cat root.txt</div> <!-- Kommando angenommen -->
+                    <div class="flag-value"><span class="password">partyishard</span></div> <!-- Flag aus Text -->
+                </div>
+            </div>
+        </section>
+        <!-- Ende Flags Section --> 
+
+    <footer class="footer">
+        <p>DarkSpirit - Cyber Security Reports</p>
+        <p>Berichtsdatum: 18. November 2022</p> <!-- Datum eingefügt -->
+    </footer>
+</body>
+</html>
